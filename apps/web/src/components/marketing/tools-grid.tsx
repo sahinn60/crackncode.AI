@@ -29,8 +29,10 @@ export function ToolsGrid({ tools: initialTools, categories, total }: {
       const url = `/api/v1/landing-page/tools${slug !== 'all' ? `?category=${slug}` : ''}`;
       const res = await fetch(url);
       const json = await res.json();
-      const raw = json.data ?? json;
-      setDisplayTools(Array.isArray(raw) ? raw : (raw.data ?? []));
+      // ResponseInterceptor wraps: { success, data: { data: [...], total } }
+      const inner = json.data ?? json;
+      const tools = inner.data ?? (Array.isArray(inner) ? inner : []);
+      setDisplayTools(tools);
     } catch {
       setDisplayTools([]);
     } finally {

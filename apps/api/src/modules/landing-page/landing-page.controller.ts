@@ -17,7 +17,7 @@ export class LandingPageController {
     if (cached) return JSON.parse(cached);
 
     const where: any = { status: 'published', deletedAt: null };
-    if (category && category !== 'all') where.category = { slug: category };
+    if (category && category !== 'all') where.category = { is: { slug: category } };
 
     const [data, total] = await Promise.all([
       this.prisma.aITool.findMany({

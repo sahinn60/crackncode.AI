@@ -11,13 +11,16 @@ async function getToolsData() {
       fetch(`${API}/api/v1/landing-page/categories`, { next: { revalidate: 60 } }),
     ]);
 
-    const toolsJson = toolsRes.ok ? await toolsRes.json() : { data: [], total: 0 };
-    const catsJson = catsRes.ok ? await catsRes.json() : [];
+    const toolsJson = toolsRes.ok ? await toolsRes.json() : {};
+    const catsJson  = catsRes.ok  ? await catsRes.json()  : {};
 
-    const raw = toolsJson.data ?? toolsJson;
-    const tools = Array.isArray(raw) ? raw : (raw.data ?? []);
-    const total: number = raw.total ?? tools.length;
-    const categories = Array.isArray(catsJson) ? catsJson : (catsJson.data ?? []);
+    // ResponseInterceptor: { success, data: { data: [...], total } }
+    const toolsInner = toolsJson.data ?? toolsJson;
+    const tools: any[]  = toolsInner.data ?? (Array.isArray(toolsInner) ? toolsInner : []);
+    const total: number = toolsInner.total ?? tools.length;
+
+    const catsInner  = catsJson.data ?? catsJson;
+    const categories: any[] = Array.isArray(catsInner) ? catsInner : [];
 
     return { tools, total, categories };
   } catch {
