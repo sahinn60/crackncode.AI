@@ -1,0 +1,8 @@
+{
+  "extends": "@crackncode/config/tsconfig/next",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src"]
+}

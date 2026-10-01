@@ -1,0 +1,44 @@
+{
+  "name": "crackncode-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npx concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" \"cd apps/api && npm run dev\" \"cd apps/web && npm run dev\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.3.0",
+    "rimraf": "^5.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.0.0",
+  "allowScripts": {
+    "@nestjs/core@10.4.22": true,
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "prisma@5.22.0": true,
+    "unrs-resolver@1.12.2": true,
+    "msgpackr-extract@3.0.4": true
+  },
+  "dependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "cookie-parser": "^1.4.7",
+    "passport-custom": "^1.2.1"
+  }
+}

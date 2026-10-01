@@ -1,0 +1,848 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserStatus {
+  active
+  suspended
+  deleted
+}
+
+enum UserRole {
+  user
+  admin
+  support_agent
+}
+
+enum PlanTier {
+  free
+  starter
+  pro
+  enterprise
+}
+
+enum BillingInterval {
+  monthly
+  yearly
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  incomplete
+  incomplete_expired
+  unpaid
+}
+
+enum GenerationStatus {
+  pending
+  processing
+  completed
+  failed
+  canceled
+}
+
+enum NotificationType {
+  info
+  SYSTEM
+  BILLING
+  SUBSCRIPTION
+  CREDITS
+  GENERATION
+  SECURITY
+  SUPPORT
+}
+
+enum CreditTransactionType {
+  grant                // legacy / kept for compatibility
+  purchase             // bought via billing
+  usage                // consumed by generation
+  refund               // refunded after failed generation
+  expiry               // expired credits
+  monthly_allocation   // automatic monthly plan grant
+  bonus                // promotional / referral bonus
+  admin_adjustment     // manual admin credit change
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
+enum AdminLogAction {
+  user_created
+  user_updated
+  user_deleted
+  user_suspended
+  role_assigned
+  role_revoked
+  plan_changed
+  credits_granted
+  tool_created
+  tool_updated
+  tool_deleted
+  category_created
+  category_updated
+  category_deleted
+  generation_deleted
+  subscription_canceled
+  payment_refunded
+}
+
+// ─── User & Identity ──────────────────────────────────────────────────────────
+
+model User {
+  id               String     @id @default(cuid())
+  email            String     @unique
+  passwordHash     String
+  role             UserRole   @default(user)
+  status           UserStatus @default(active)
+  isEmailVerified  Boolean    @default(false)
+  lastLoginAt      DateTime?
+  deletedAt        DateTime?  // soft delete
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  profile           Profile?
+  roleAssignments   UserRoleAssignment[]
+  creditAccount     CreditAccount?
+  subscription      Subscription?
+  generations       Generation[]
+  favorites         Favorite[]
+  notifications     Notification[]
+  chatConversations ChatConversation[]
+  payments          Payment[]
+  adminLogs         AdminLog[]         @relation("AdminLogTarget")
+  adminActions      AdminLog[]         @relation("AdminLogActor")
+  supportConversations SupportConversation[]
+  agentConversations   SupportConversation[] @relation("AgentConversations")
+  apiKeys              ApiKey[]
+  sessions             Session[]
+  securityEvents       SecurityEvent[]
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  avatarUrl   String?
+  bio         String?
+  timezone    String   @default("UTC")
+  locale      String   @default("en")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+// ─── Roles & Permissions ──────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // system roles cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       UserRoleAssignment[]
+
+  @@index([name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String   // e.g. "create", "read", "update", "delete", "manage"
+  subject     String   // e.g. "Tool", "User", "Generation", "all"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([action, subject])
+  @@index([subject])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  grantedAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  userId      String
+  roleId      String
+  assignedAt  DateTime @default(now())
+  assignedBy  String?  // userId of admin who assigned
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_role_assignments")
+}
+
+// ─── Categories & AI Tools ────────────────────────────────────────────────────
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  iconUrl     String?
+  color       String?  // hex color for UI
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tools AITool[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+model AITool {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String
+  shortDescription String?
+  categoryId      String
+  iconUrl         String?
+  coverImageUrl   String?
+  tags            String[] // searchable tags
+  isActive        Boolean  @default(true)
+  isPremium       Boolean  @default(false)
+  isFeatured      Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  usageCount      Int      @default(0) // denormalized counter
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category      Category            @relation(fields: [categoryId], references: [id])
+  configuration ToolConfiguration?
+  generations   Generation[]
+  favorites     Favorite[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isPremium])
+  @@index([isFeatured])
+  @@index([usageCount])
+  @@index([tags])
+  @@map("ai_tools")
+}
+
+model ToolConfiguration {
+  id              String   @id @default(cuid())
+  toolId          String   @unique
+  systemPrompt    String   // the actual AI system prompt
+  userPromptTemplate String // template with {{variable}} placeholders
+  inputSchema     Json     // JSON Schema for input validation
+  outputFormat    String   @default("text") // text | markdown | json | html
+  aiProvider      String   @default("openai")
+  aiModel         String   @default("gpt-4o")
+  maxTokens       Int      @default(2048)
+  temperature     Float    @default(0.7)
+  creditCost      Int      @default(1) // credits consumed per generation
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tool AITool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@map("tool_configurations")
+}
+
+// ─── Generations ──────────────────────────────────────────────────────────────
+
+model Generation {
+  id            String           @id @default(cuid())
+  userId        String
+  toolId        String
+  input         Json             // user-provided input fields
+  status        GenerationStatus @default(pending)
+  aiProvider    String?
+  aiModel       String?
+  promptTokens  Int?
+  outputTokens  Int?
+  totalTokens   Int?
+  durationMs    Int?
+  creditsCost   Int              @default(0)
+  deletedAt     DateTime?        // soft delete
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool   AITool            @relation(fields: [toolId], references: [id])
+  result GenerationResult?
+  history History?
+
+  @@index([userId])
+  @@index([toolId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([deletedAt])
+  @@map("generations")
+}
+
+model GenerationResult {
+  id           String   @id @default(cuid())
+  generationId String   @unique
+  output       String   // the AI-generated text/content
+  outputFormat String   @default("text")
+  metadata     Json?    // extra provider-specific metadata
+  createdAt    DateTime @default(now())
+
+  generation Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  @@map("generation_results")
+}
+
+model History {
+  id           String   @id @default(cuid())
+  generationId String   @unique
+  userId       String
+  title        String?  // auto-generated or user-set title
+  isPinned     Boolean  @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  generation Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, isPinned])
+  @@index([deletedAt])
+  @@map("history")
+}
+
+// ─── Favorites ────────────────────────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  toolId    String
+  createdAt DateTime @default(now())
+
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool AITool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+// ─── Credits ──────────────────────────────────────────────────────────────────
+
+model CreditAccount {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0) // always kept in sync via transactions
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions CreditTransaction[]
+
+  @@index([userId])
+  @@map("credit_accounts")
+}
+
+model CreditTransaction {
+  id          String                @id @default(cuid())
+  accountId   String
+  type        CreditTransactionType
+  amount      Int                   // positive = credit, negative = debit
+  balanceAfter Int                  // snapshot of balance after this tx
+  description String
+  referenceId String?               // generationId, paymentId, etc.
+  expiresAt   DateTime?
+  createdAt   DateTime              @default(now())
+
+  account CreditAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([accountId, createdAt])
+  @@index([type])
+  @@index([referenceId])
+  @@map("credit_transactions")
+}
+
+// ─── Plans & Subscriptions ────────────────────────────────────────────────────
+
+model Plan {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  tier             PlanTier        @unique
+  description      String?
+  monthlyPriceUsd  Decimal         @db.Decimal(10, 2)
+  yearlyPriceUsd   Decimal         @db.Decimal(10, 2)
+  creditsPerMonth  Int
+  maxGenerations   Int?            // null = unlimited
+  features         Json            // array of feature strings for UI
+  stripePriceIdMonthly String?
+  stripePriceIdYearly  String?
+  isActive         Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  apiKeysAllowed  Int     @default(0)   // 0 = no API access
+  apiRateLimit    Int     @default(0)   // requests per minute, 0 = no access
+
+  subscriptions Subscription[]
+
+  @@index([tier])
+  @@index([isActive])
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  planId               String
+  status               SubscriptionStatus @default(trialing)
+  billingInterval      BillingInterval    @default(monthly)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  trialEndsAt          DateTime?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+  invoices Invoice[]
+
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+// ─── Payments & Invoices ──────────────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  stripePaymentIntentId String?   @unique
+  stripeChargeId    String?       @unique
+  amountUsd         Decimal       @db.Decimal(10, 2)
+  currency          String        @default("usd")
+  status            PaymentStatus @default(pending)
+  description       String?
+  metadata          Json?
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  invoice      Invoice?
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model Invoice {
+  id               String   @id @default(cuid())
+  subscriptionId   String
+  paymentId        String?  @unique
+  stripeInvoiceId  String?  @unique
+  number           String?  // human-readable invoice number
+  amountDue        Decimal  @db.Decimal(10, 2)
+  amountPaid       Decimal  @db.Decimal(10, 2) @default(0)
+  currency         String   @default("usd")
+  status           String   @default("draft") // draft | open | paid | void | uncollectible
+  invoicePdfUrl    String?
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  dueDate          DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payment      Payment?     @relation(fields: [paymentId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invoices")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType @default(info)
+  title      String
+  body       String
+  actionUrl  String?          // optional deep-link
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  deletedAt  DateTime?
+  createdAt  DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("notifications")
+}
+
+// ─── Support Chat ────────────────────────────────────────────────────────────
+
+enum ConversationStatus {
+  waiting      // waiting for agent
+  ai_active    // AI is handling
+  assigned     // agent assigned
+  active       // live with agent
+  resolved     // closed by agent
+  closed       // closed by user
+}
+
+enum MessageType {
+  text
+  image
+  file
+  system      // status change messages
+  note        // internal agent note
+}
+
+enum SenderType {
+  user
+  agent
+  ai
+  system
+}
+
+model SupportConversation {
+  id              String             @id @default(cuid())
+  userId          String
+  assignedAgentId String?
+  status          ConversationStatus @default(ai_active)
+  subject         String?
+  isAiHandling    Boolean            @default(true)
+  aiHandoffAt     DateTime?          // when AI handed off to human
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  lastMessageAt   DateTime?
+  unreadCount     Int                @default(0)
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedAgent User?                 @relation("AgentConversations", fields: [assignedAgentId], references: [id])
+  messages      SupportMessage[]
+  participants  SupportParticipant[]
+
+  @@index([userId])
+  @@index([assignedAgentId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String?     // null for system/ai messages
+  senderType     SenderType
+  type           MessageType @default(text)
+  content        String
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  mimeType       String?
+  isRead         Boolean     @default(false)
+  readAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("support_messages")
+}
+
+model SupportParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime @default(now())
+  leftAt         DateTime?
+
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@map("support_participants")
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+model ChatConversation {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String?
+  model       String    @default("gpt-4o")
+  systemPrompt String?
+  totalTokens Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([deletedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant" | "system"
+  content        String
+  promptTokens   Int?
+  outputTokens   Int?
+  totalTokens    Int?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────────
+
+model AdminLog {
+  id         String         @id @default(cuid())
+  actorId    String         // admin user who performed the action
+  targetId   String?        // affected user/resource id
+  action     AdminLogAction
+  entity     String         // "User" | "Tool" | "Subscription" etc.
+  entityId   String?
+  before     Json?          // snapshot before change
+  after      Json?          // snapshot after change
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime       @default(now())
+
+  actor  User  @relation("AdminLogActor",  fields: [actorId],  references: [id])
+  target User? @relation("AdminLogTarget", fields: [targetId], references: [id])
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
+
+// ─── Developer API Keys ─────────────────────────────────────────────────────
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String    @unique  // SHA-256 hash of the full key
+  keyPrefix   String              // first 8 chars shown in UI e.g. "cnc_live_"
+  lastUsedAt  DateTime?
+  lastUsedIp  String?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs ApiUsageLog[]
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([isActive])
+  @@index([userId, isActive]) // list active keys per user
+  @@map("api_keys")
+}
+
+model ApiUsageLog {
+  id         String   @id @default(cuid())
+  apiKeyId   String
+  userId     String
+  endpoint   String
+  method     String
+  statusCode Int
+  durationMs Int?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([apiKeyId, createdAt]) // paginated usage per key
+  @@map("api_usage_logs")
+}
+
+// ─── Login Attempts (brute-force protection) ──────────────────────────────────
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  email      String
+  ipAddress  String
+  success    Boolean  @default(false)
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([email, ipAddress, createdAt])
+  @@map("login_attempts")
+}
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  tokenFamilyId    String
+  sessionVersion   Int       @default(1)
+  ipAddress        String?
+  userAgent        String?
+  deviceInfo       String?   // parsed device/browser label
+  lastActivityAt   DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?   // logout | password_change | admin | reuse_detected | all_sessions
+  createdAt        DateTime  @default(now())
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshFamilies  RefreshTokenFamily[]
+
+  @@index([userId])
+  @@index([tokenFamilyId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("sessions")
+}
+
+model RefreshTokenFamily {
+  id            String    @id @default(cuid())
+  sessionId     String
+  userId        String
+  tokenHash     String    @unique  // bcrypt/SHA-256 hash of current refresh token
+  previousHash  String?            // hash of previous token (reuse detection)
+  rotationCount Int       @default(0)
+  revokedAt     DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("refresh_token_families")
+}
+
+// ─── Security Events ──────────────────────────────────────────────────────────
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  LOGOUT_ALL
+  SESSION_CREATED
+  SESSION_REVOKED
+  TOKEN_REFRESH
+  TOKEN_REUSE_DETECTED
+  PASSWORD_CHANGED
+  EMAIL_CHANGED
+  API_KEY_CREATED
+  API_KEY_REVOKED
+  SUSPICIOUS_SESSION
+  ALL_SESSIONS_REVOKED
+  ACCOUNT_LOCKED
+}
+
+model SecurityEvent {
+  id          String            @id @default(cuid())
+  userId      String?
+  sessionId   String?
+  type        SecurityEventType
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("security_events")
+}
