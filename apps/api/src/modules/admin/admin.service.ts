@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AdminLogAction, UserStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 import { CreditsService } from '../credits/credits.service';
 import { AdminAdjustDto } from '../credits/credits.dto';
 import { UsersRepository } from '../users/users.repository';
@@ -9,6 +10,7 @@ import { UsersRepository } from '../users/users.repository';
 export class AdminService {
   constructor(
     private prisma: PrismaService,
+    private redis: RedisService,
     private usersRepo: UsersRepository,
     private credits: CreditsService,
   ) {}
@@ -204,6 +206,66 @@ export class AdminService {
     await this.prisma.aITool.update({ where: { id: toolId }, data: { deletedAt: new Date(), isActive: false } });
     await this.log(actorId, null, AdminLogAction.tool_deleted, 'AITool', toolId, tool);
     return { success: true };
+  }
+
+  async getLandingPageStats() {
+    const [total, published, draft, archived] = await Promise.all([
+      this.prisma.aITool.count({ where: { deletedAt: null } }),
+      this.prisma.aITool.count({ where: { deletedAt: null, status: 'published' } }),
+      this.prisma.aITool.count({ where: { deletedAt: null, status: 'draft' } }),
+      this.prisma.aITool.count({ where: { deletedAt: null, status: 'archived' } }),
+    ]);
+    return { total, published, draft, archived };
+  }
+
+  async getLandingPageTools(skip = 0, take = 20, search?: string) {
+    const where: any = { deletedAt: null };
+    if (search) where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { slug: { contains: search, mode: 'insensitive' } },
+    ];
+    const [items, total] = await Promise.all([
+      this.prisma.aITool.findMany({
+        where,
+        include: { category: { select: { id: true, name: true, slug: true } } },
+        orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        skip,
+        take,
+      }),
+      this.prisma.aITool.count({ where }),
+    ]);
+    return { items, total, skip, take };
+  }
+
+  async publishTool(actorId: string, toolId: string) {
+    const tool = await this.prisma.aITool.findFirst({ where: { id: toolId, deletedAt: null } });
+    if (!tool) throw new NotFoundException('Tool not found');
+    await this.prisma.aITool.update({ where: { id: toolId }, data: { status: 'published', isActive: true } });
+    await this.bustLandingCache();
+    await this.log(actorId, null, AdminLogAction.tool_updated, 'AITool', toolId, { status: tool.status }, { status: 'published' });
+    return { success: true };
+  }
+
+  async archiveTool(actorId: string, toolId: string) {
+    const tool = await this.prisma.aITool.findFirst({ where: { id: toolId, deletedAt: null } });
+    if (!tool) throw new NotFoundException('Tool not found');
+    await this.prisma.aITool.update({ where: { id: toolId }, data: { status: 'archived', isActive: false } });
+    await this.bustLandingCache();
+    await this.log(actorId, null, AdminLogAction.tool_updated, 'AITool', toolId, { status: tool.status }, { status: 'archived' });
+    return { success: true };
+  }
+
+  async reorderTools(actorId: string, items: { id: string; sortOrder: number }[]) {
+    await Promise.all(
+      items.map((item) => this.prisma.aITool.update({ where: { id: item.id }, data: { sortOrder: item.sortOrder } }))
+    );
+    await this.bustLandingCache();
+    return { success: true };
+  }
+
+  private async bustLandingCache() {
+    const keys = await this.redis.keys('cache:landing:*');
+    if (keys.length) await Promise.all(keys.map((k) => this.redis.del(k)));
   }
 
   // ─── Plan management ──────────────────────────────────────────────────────

@@ -54,7 +54,6 @@
     "stripe": "^16.0.0"
   },
   "devDependencies": {
-    "@crackncode/config": "*",
     "@nestjs/cli": "^10.3.0",
     "@nestjs/schematics": "^10.1.0",
     "@nestjs/testing": "^10.3.0",

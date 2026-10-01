@@ -3,34 +3,72 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Code2, ChevronDown } from 'lucide-react';
-import { Button, cn } from '@crackncode/ui';
-import { Container } from './primitives';
+import { Menu, X, Zap, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+/* ── Data ─────────────────────────────────────────────────────────────────── */
 const NAV_LINKS = [
-  { label: 'AI Tools', href: '/tools' },
-  { label: 'Features', href: '/features' },
-  { label: 'Pricing',  href: '/pricing' },
-  {
-    label: 'Resources',
-    href: '#',
-    children: [
-      { label: 'FAQ',     href: '/faq' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
-];
+  { label: 'Tools',            href: '#tools' },
+  { label: 'Features',         href: '#features' },
+  { label: 'Tools Limitation', href: '/tools' },
+] as const;
 
-export function MarketingHeader() {
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
+function Logo() {
+  return (
+    <Link href="/" className="flex items-center gap-2 shrink-0 group">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#c8f135] shadow-[0_0_14px_rgba(200,241,53,0.35)] transition-shadow duration-300 group-hover:shadow-[0_0_22px_rgba(200,241,53,0.55)]">
+        <Zap className="h-3.5 w-3.5 text-black" strokeWidth={2.5} />
+      </div>
+      <span className="text-[15px] font-bold tracking-tight text-white">
+        CracknCode <span className="text-[#c8f135]">AI</span>
+      </span>
+    </Link>
+  );
+}
+
+/* ── Desktop NavLink ──────────────────────────────────────────────────────── */
+function NavLink({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
+  const isActive = pathname === href;
+  const isHash = href.startsWith('#');
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isHash) {
+      e.preventDefault();
+      document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <a
+      href={href}
+      onClick={handleClick}
+      className={cn(
+        'relative px-3.5 py-2 text-[13.5px] font-medium transition-colors duration-200 rounded-md',
+        isActive
+          ? 'text-white'
+          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]',
+      )}
+    >
+      {label}
+      {isActive && (
+        <span className="absolute bottom-1 left-3.5 right-3.5 h-px rounded-full bg-[#c8f135]/70" />
+      )}
+    </a>
+  );
+}
+
+/* ── Main Header ──────────────────────────────────────────────────────────── */
+export function MarketingHeader() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
-  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
+  const pathname = usePathname();
 
   React.useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 12);
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   React.useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -40,130 +78,136 @@ export function MarketingHeader() {
       className={cn(
         'fixed top-0 left-0 right-0 z-[200] transition-all duration-300',
         scrolled
-          ? 'bg-background/90 backdrop-blur-md border-b border-border shadow-xs'
-          : 'bg-transparent',
+          ? 'bg-[#080808]/95 backdrop-blur-xl border-b border-white/[0.07] shadow-[0_1px_24px_rgba(0,0,0,0.5)]'
+          : 'bg-transparent border-b border-white/[0.04]',
       )}
     >
-      <Container>
-        <div className="flex h-16 items-center justify-between gap-6">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Code2 className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-base text-foreground">CracknCode AI</span>
-          </Link>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-[62px] items-center justify-between gap-6">
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) =>
-              link.children ? (
-                <div
-                  key={link.label}
-                  className="relative"
-                  onMouseEnter={() => setOpenDropdown(link.label)}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                >
-                  <button className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                    {link.label}
-                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', openDropdown === link.label && 'rotate-180')} />
-                  </button>
-                  {openDropdown === link.label && (
-                    <div className="absolute top-full left-0 mt-1 w-40 rounded-lg border border-border bg-popover p-1 shadow-lg animate-in">
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    pathname === link.href
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ),
-            )}
+          {/* Left — Logo */}
+          <Logo />
+
+          {/* Center — Nav */}
+          <nav className="hidden lg:flex items-center gap-0.5">
+            {NAV_LINKS.map((link) => (
+              <NavLink key={link.label} href={link.href} label={link.label} />
+            ))}
           </nav>
 
-          {/* Desktop actions */}
-          <div className="hidden md:flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/signup">Get Started</Link>
-            </Button>
+          {/* Right — Actions */}
+          <div className="hidden lg:flex items-center gap-2">
+            {/* Currency badge */}
+            <span className="text-[11px] font-semibold text-zinc-500 border border-zinc-700/80 rounded-md px-2 py-1 select-none tracking-wide">
+              ৳ BDT
+            </span>
+
+            {/* Primary CTA */}
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#c8f135] px-4 py-1.5 text-[12.5px] font-bold text-black hover:bg-[#d6f74e] transition-all duration-200 shadow-[0_0_14px_rgba(200,241,53,0.2)] hover:shadow-[0_0_22px_rgba(200,241,53,0.38)]"
+            >
+              <Zap className="h-3 w-3" strokeWidth={2.5} />
+              Let&apos;s Build Your AI Start-up
+            </Link>
+
+            {/* Sign In */}
+            <Link
+              href="/login"
+              className="px-3 py-1.5 text-[13px] font-medium text-zinc-400 hover:text-white transition-colors duration-200"
+            >
+              Sign In
+            </Link>
+
+            {/* Get Started */}
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-1 rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 text-[13px] font-medium text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-200"
+            >
+              Get Started
+              <span className="text-zinc-400 text-sm">→</span>
+            </Link>
           </div>
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="lg:hidden rounded-lg p-2 text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
-      </Container>
+      </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md animate-in">
-          <Container className="py-4 space-y-1">
-            {NAV_LINKS.map((link) =>
-              link.children ? (
-                <div key={link.label}>
-                  <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {link.label}
-                  </p>
-                  {link.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <Link
-                  key={link.href}
+      <div
+        className={cn(
+          'lg:hidden overflow-hidden transition-all duration-300 ease-in-out',
+          mobileOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0',
+        )}
+      >
+        <div className="border-t border-white/[0.06] bg-[#080808]/98 backdrop-blur-xl">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4 space-y-1">
+            {NAV_LINKS.map((link) => {
+              const isHash = link.href.startsWith('#');
+              const isActive = pathname === link.href;
+              return (
+                <a
+                  key={link.label}
                   href={link.href}
+                  onClick={(e) => {
+                    if (isHash) {
+                      e.preventDefault();
+                      setMobileOpen(false);
+                      setTimeout(() => {
+                        document.getElementById(link.href.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+                      }, 200);
+                    } else {
+                      setMobileOpen(false);
+                    }
+                  }}
                   className={cn(
-                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    pathname === link.href ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    'flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-[#c8f135]/8 text-[#c8f135]'
+                      : 'text-zinc-400 hover:bg-white/[0.05] hover:text-white',
                   )}
                 >
                   {link.label}
+                </a>
+              );
+            })}
+
+            <div className="pt-3 mt-1 border-t border-white/[0.06] space-y-2">
+              <Link
+                href="/register"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-1.5 w-full rounded-full bg-[#c8f135] px-4 py-2.5 text-sm font-bold text-black hover:bg-[#d6f74e] transition-colors"
+              >
+                <Zap className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Let&apos;s Build Your AI Start-up
+              </Link>
+              <div className="flex gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 text-center rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm font-medium text-white hover:bg-white/[0.08] transition-colors"
+                >
+                  Sign In
                 </Link>
-              ),
-            )}
-            <div className="flex flex-col gap-2 pt-3 border-t border-border">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/signup">Get Started</Link>
-              </Button>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 text-center rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm font-medium text-white hover:bg-white/[0.08] transition-colors"
+                >
+                  Get Started →
+                </Link>
+              </div>
             </div>
-          </Container>
+          </div>
         </div>
-      )}
+      </div>
     </header>
   );
 }

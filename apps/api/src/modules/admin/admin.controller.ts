@@ -156,4 +156,35 @@ export class AdminController {
   getAuditLogs(@Query('skip') skip?: string, @Query('take') take?: string) {
     return this.svc.getAuditLogs(skip ? +skip : 0, take ? +take : 50);
   }
+
+  // ─── Landing Page ─────────────────────────────────────────────────────────
+
+  @Get('landing-page/stats')
+  getLandingStats() {
+    return this.svc.getLandingPageStats();
+  }
+
+  @Get('landing-page/tools')
+  getLandingTools(
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.svc.getLandingPageTools(skip ? +skip : 0, take ? +take : 20, search);
+  }
+
+  @Post('landing-page/tools/:id/publish')
+  publishTool(@CurrentUser() actor: User, @Param('id') id: string) {
+    return this.svc.publishTool(actor.id, id);
+  }
+
+  @Post('landing-page/tools/:id/archive')
+  archiveTool(@CurrentUser() actor: User, @Param('id') id: string) {
+    return this.svc.archiveTool(actor.id, id);
+  }
+
+  @Patch('landing-page/tools/reorder')
+  reorderTools(@CurrentUser() actor: User, @Body() body: { items: { id: string; sortOrder: number }[] }) {
+    return this.svc.reorderTools(actor.id, body.items);
+  }
 }

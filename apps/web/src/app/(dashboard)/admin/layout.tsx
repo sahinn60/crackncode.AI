@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Wrench, CreditCard, BarChart3,
-  MessageCircle, FileText, Shield, ChevronLeft, LogOut,
+  MessageCircle, FileText, Shield, ChevronLeft, LogOut, Globe,
 } from 'lucide-react';
 import { cn } from '@crackncode/ui';
 import { useAuth } from '@/providers/auth-provider';
@@ -18,7 +18,8 @@ const NAV = [
   { label: 'Payments',  href: '/admin/payments',   icon: CreditCard },
   { label: 'Support',   href: '/admin/support',    icon: MessageCircle },
   { label: 'Analytics', href: '/admin/analytics',  icon: BarChart3 },
-  { label: 'Audit Log', href: '/admin/logs',       icon: FileText },
+  { label: 'Audit Log',    href: '/admin/logs',          icon: FileText },
+  { label: 'Landing Page', href: '/admin/landing-page',  icon: Globe },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

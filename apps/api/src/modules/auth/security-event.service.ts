@@ -26,7 +26,7 @@ export class SecurityEventService {
           type: opts.type,
           ipAddress: opts.ipAddress,
           userAgent: opts.userAgent ? opts.userAgent.slice(0, 500) : undefined,
-          metadata: opts.metadata,
+          metadata: opts.metadata as object,
         },
       });
     } catch (err) {

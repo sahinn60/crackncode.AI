@@ -100,6 +100,12 @@ enum AdminLogAction {
   payment_refunded
 }
 
+enum ToolStatus {
+  draft
+  published
+  archived
+}
+
 // ─── User & Identity ──────────────────────────────────────────────────────────
 
 model User {
@@ -234,23 +240,30 @@ model Category {
 }
 
 model AITool {
-  id              String   @id @default(cuid())
-  name            String
-  slug            String   @unique
-  description     String
+  id               String     @id @default(cuid())
+  name             String
+  slug             String     @unique
+  description      String
   shortDescription String?
-  categoryId      String
-  iconUrl         String?
-  coverImageUrl   String?
-  tags            String[] // searchable tags
-  isActive        Boolean  @default(true)
-  isPremium       Boolean  @default(false)
-  isFeatured      Boolean  @default(false)
-  sortOrder       Int      @default(0)
-  usageCount      Int      @default(0) // denormalized counter
-  deletedAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  categoryId       String
+  iconUrl          String?
+  coverImageUrl    String?
+  tags             String[]
+  isActive         Boolean    @default(true)
+  isPremium        Boolean    @default(false)
+  isFeatured       Boolean    @default(false)
+  sortOrder        Int        @default(0)
+  usageCount       Int        @default(0)
+  // Landing page fields
+  status           ToolStatus @default(draft)
+  price            Decimal?   @db.Decimal(10, 2)
+  currency         String     @default("BDT")
+  badge            String?    // Popular | Hot | New | Featured
+  ctaText          String     @default("Buy Now")
+  destinationUrl   String?
+  deletedAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   category      Category            @relation(fields: [categoryId], references: [id])
   configuration ToolConfiguration?
@@ -262,6 +275,7 @@ model AITool {
   @@index([isActive])
   @@index([isPremium])
   @@index([isFeatured])
+  @@index([status])
   @@index([usageCount])
   @@index([tags])
   @@map("ai_tools")

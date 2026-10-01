@@ -28,6 +28,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { DeveloperModule } from './modules/developer/developer.module';
 import { PublicApiModule } from './modules/public-api/public-api.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { LandingPageModule } from './modules/landing-page/landing-page.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
     DeveloperModule,
     PublicApiModule,
     SchedulerModule,
+    LandingPageModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

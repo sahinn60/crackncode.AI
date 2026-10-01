@@ -1,5 +1,5 @@
 import {
-  IsBoolean, IsInt, IsNumber, IsObject, IsOptional,
+  IsBoolean, IsIn, IsInt, IsNumber, IsObject, IsOptional,
   IsString, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
 
@@ -27,6 +27,12 @@ export class AdminCreateToolDto {
   @IsOptional() @IsBoolean() isPremium?: boolean;
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+  @IsOptional() @IsString() @IsIn(['draft','published','archived']) status?: string;
+  @IsOptional() @IsNumber() @Min(0) price?: number;
+  @IsOptional() @IsString() currency?: string;
+  @IsOptional() @IsString() @MaxLength(50) badge?: string;
+  @IsOptional() @IsString() @MaxLength(50) ctaText?: string;
+  @IsOptional() @IsString() destinationUrl?: string;
   @IsOptional() configuration?: AdminToolConfigDto;
 }
 
@@ -36,10 +42,17 @@ export class AdminUpdateToolDto {
   @IsOptional() @IsString() @MaxLength(300) shortDescription?: string;
   @IsOptional() @IsString() categoryId?: string;
   @IsOptional() @IsString() iconUrl?: string;
+  @IsOptional() @IsString() coverImageUrl?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsBoolean() isPremium?: boolean;
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+  @IsOptional() @IsString() @IsIn(['draft','published','archived']) status?: string;
+  @IsOptional() @IsNumber() @Min(0) price?: number;
+  @IsOptional() @IsString() currency?: string;
+  @IsOptional() @IsString() @MaxLength(50) badge?: string;
+  @IsOptional() @IsString() @MaxLength(50) ctaText?: string;
+  @IsOptional() @IsString() destinationUrl?: string;
   @IsOptional() configuration?: AdminToolConfigDto;
 }
 

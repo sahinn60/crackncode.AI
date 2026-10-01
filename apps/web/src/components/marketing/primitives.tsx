@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { cn } from '@crackncode/ui';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 /* ── Container ──────────────────────────────────────────────────────────────── */
 export function Container({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -18,7 +23,7 @@ interface SectionWrapperProps extends React.HTMLAttributes<HTMLElement> {
 export function SectionWrapper({ as: Tag = 'section', subtle, className, children, ...props }: SectionWrapperProps) {
   return (
     <Tag
-      className={cn('py-20 lg:py-28', subtle && 'bg-background-subtle', className)}
+      className={cn('py-20 lg:py-28', subtle ? 'bg-[#0a0a0a]' : 'bg-[#080808]', className)}
       {...props}
     >
       {children}
@@ -29,7 +34,7 @@ export function SectionWrapper({ as: Tag = 'section', subtle, className, childre
 /* ── SectionLabel ───────────────────────────────────────────────────────────── */
 export function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-primary', className)}>
+    <div className={cn('inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/5 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-violet-400', className)}>
       {children}
     </div>
   );
@@ -51,11 +56,11 @@ export function SectionHeading({ label, title, description, centered = true, cla
           <SectionLabel>{label}</SectionLabel>
         </div>
       )}
-      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl text-foreground">
+      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl text-white">
         {title}
       </h2>
       {description && (
-        <p className={cn('mt-4 text-lg text-muted-foreground leading-relaxed', centered && 'mx-auto max-w-2xl')}>
+        <p className={cn('mt-4 text-base text-zinc-400 leading-relaxed sm:text-lg', centered && 'mx-auto max-w-2xl')}>
           {description}
         </p>
       )}
@@ -66,7 +71,7 @@ export function SectionHeading({ label, title, description, centered = true, cla
 /* ── GradientText ───────────────────────────────────────────────────────────── */
 export function GradientText({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn('bg-gradient-to-r from-primary via-violet-400 to-pink-400 bg-clip-text text-transparent', className)}>
+    <span className={cn('bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent', className)}>
       {children}
     </span>
   );
@@ -74,5 +79,5 @@ export function GradientText({ children, className }: { children: React.ReactNod
 
 /* ── Divider ────────────────────────────────────────────────────────────────── */
 export function Divider({ className }: { className?: string }) {
-  return <div className={cn('h-px w-full bg-gradient-to-r from-transparent via-border to-transparent', className)} />;
+  return <div className={cn('h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent', className)} />;
 }

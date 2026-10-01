@@ -1,16 +1,16 @@
 import Link from 'next/link';
-import { Code2, Twitter, Github, Linkedin, Youtube } from 'lucide-react';
-import { Container, Divider } from './primitives';
+import { Zap, Twitter, Github, Linkedin, Youtube } from 'lucide-react';
+import { Container } from './primitives';
 
 const FOOTER_LINKS = [
   {
     heading: 'Product',
     links: [
-      { label: 'AI Tools',   href: '/tools' },
-      { label: 'Features',   href: '/features' },
-      { label: 'Pricing',    href: '/pricing' },
-      { label: 'Changelog',  href: '#' },
-      { label: 'Roadmap',    href: '#' },
+      { label: 'AI Tools',  href: '/tools' },
+      { label: 'Features',  href: '#features' },
+      { label: 'Pricing',   href: '#pricing' },
+      { label: 'Changelog', href: '#' },
+      { label: 'Roadmap',   href: '#' },
     ],
   },
   {
@@ -19,26 +19,26 @@ const FOOTER_LINKS = [
       { label: 'Documentation', href: '#' },
       { label: 'API Reference',  href: '#' },
       { label: 'Blog',           href: '#' },
-      { label: 'FAQ',            href: '/faq' },
+      { label: 'FAQ',            href: '#faq' },
       { label: 'Contact',        href: '/contact' },
     ],
   },
   {
     heading: 'Company',
     links: [
-      { label: 'About',       href: '#' },
-      { label: 'Careers',     href: '#' },
-      { label: 'Press',       href: '#' },
-      { label: 'Partners',    href: '#' },
+      { label: 'About',    href: '#' },
+      { label: 'Careers',  href: '#' },
+      { label: 'Press',    href: '#' },
+      { label: 'Partners', href: '#' },
     ],
   },
   {
     heading: 'Legal',
     links: [
-      { label: 'Privacy Policy',    href: '#' },
-      { label: 'Terms of Service',  href: '#' },
-      { label: 'Cookie Policy',     href: '#' },
-      { label: 'Security',          href: '#' },
+      { label: 'Privacy Policy',   href: '#' },
+      { label: 'Terms of Service', href: '#' },
+      { label: 'Cookie Policy',    href: '#' },
+      { label: 'Security',         href: '#' },
     ],
   },
 ];
@@ -52,28 +52,29 @@ const SOCIALS = [
 
 export function MarketingFooter() {
   return (
-    <footer className="bg-background-subtle border-t border-border">
+    <footer className="bg-[#050505] border-t border-white/[0.05]">
       <Container className="py-16">
-        {/* Top row */}
         <div className="grid grid-cols-2 gap-8 md:grid-cols-6">
           {/* Brand */}
           <div className="col-span-2">
-            <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Code2 className="h-4 w-4 text-primary-foreground" />
+            <Link href="/" className="inline-flex items-center gap-2 mb-5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#c8f135]">
+                <Zap className="h-3.5 w-3.5 text-black" strokeWidth={2.5} />
               </div>
-              <span className="font-bold text-base text-foreground">CracknCode AI</span>
+              <span className="font-bold text-[15px] text-white">
+                CracknCode <span className="text-[#c8f135]">AI</span>
+              </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <p className="text-sm text-zinc-500 leading-relaxed max-w-[220px]">
               All your AI tools in one powerful workspace. Write, market, code and create faster than ever.
             </p>
-            <div className="flex items-center gap-3 mt-5">
+            <div className="flex items-center gap-2.5 mt-5">
               {SOCIALS.map(({ icon: Icon, href, label }) => (
                 <Link
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-border-strong transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-white/[0.07] text-zinc-500 hover:text-white hover:border-white/[0.18] transition-all duration-200"
                 >
                   <Icon className="h-3.5 w-3.5" />
                 </Link>
@@ -84,15 +85,15 @@ export function MarketingFooter() {
           {/* Link columns */}
           {FOOTER_LINKS.map((col) => (
             <div key={col.heading}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                 {col.heading}
               </p>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-zinc-600 hover:text-zinc-300 transition-colors duration-200"
                     >
                       {link.label}
                     </Link>
@@ -103,15 +104,14 @@ export function MarketingFooter() {
           ))}
         </div>
 
-        <Divider className="my-8" />
+        <div className="my-8 h-px w-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
 
-        {/* Bottom row */}
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-zinc-700">
             © {new Date().getFullYear()} CracknCode AI. All rights reserved.
           </p>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="inline-block h-2 w-2 rounded-full bg-success animate-pulse" />
+          <div className="flex items-center gap-1.5 text-xs text-zinc-700">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
             All systems operational
           </div>
         </div>
