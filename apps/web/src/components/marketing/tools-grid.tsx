@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 
 const BADGE_STYLES: Record<string, string> = {
   New:      'bg-blue-500/15 text-blue-300',
