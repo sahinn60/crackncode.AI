@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Button, Alert } from '@crackncode/ui';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordInput } from '@/components/auth/password-input';
@@ -62,9 +61,10 @@ export default function LoginPage() {
       <AuthDivider label="or continue with email" />
 
       {serverError && (
-        <Alert variant="destructive" className="mb-4" onDismiss={() => setServerError('')}>
-          {serverError}
-        </Alert>
+        <div className="mb-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive flex items-center justify-between">
+          <span>{serverError}</span>
+          <button onClick={() => setServerError('')} className="ml-2 text-destructive/70 hover:text-destructive">✕</button>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -116,9 +116,9 @@ export default function LoginPage() {
           </label>
         </div>
 
-        <Button type="submit" className="w-full" loading={loading}>
+        <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {loading ? 'Signing in...' : 'Sign in'}
-        </Button>
+        </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

@@ -1,8 +1,10 @@
-import { Skeleton } from '@crackncode/ui';
+import * as React from 'react';
 import { AlertTriangle, RefreshCw, Inbox } from 'lucide-react';
-import { Button } from '@crackncode/ui';
 
-/* ── Card skeleton ─────────────────────────────────────────────────────────── */
+function Skeleton({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-muted ${className ?? ''}`} />;
+}
+
 export function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-3 p-5">
@@ -13,7 +15,6 @@ export function CardSkeleton({ rows = 3 }: { rows?: number }) {
   );
 }
 
-/* ── Stat card skeleton ────────────────────────────────────────────────────── */
 export function StatSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -27,7 +28,6 @@ export function StatSkeleton() {
   );
 }
 
-/* ── List item skeleton ────────────────────────────────────────────────────── */
 export function ListSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="space-y-3 p-5">
@@ -45,7 +45,6 @@ export function ListSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-/* ── Error state ───────────────────────────────────────────────────────────── */
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -57,20 +56,16 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
         <p className="text-xs text-muted-foreground mt-0.5">{message ?? 'Something went wrong. Please try again.'}</p>
       </div>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
+        <button onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
           <RefreshCw className="h-3.5 w-3.5" /> Retry
-        </Button>
+        </button>
       )}
     </div>
   );
 }
 
-/* ── Empty state ───────────────────────────────────────────────────────────── */
 export function EmptyState({
-  icon: Icon = Inbox,
-  title,
-  description,
-  action,
+  icon: Icon = Inbox, title, description, action,
 }: {
   icon?: React.ComponentType<{ className?: string }>;
   title: string;

@@ -30,6 +30,7 @@ import { PublicApiModule } from './modules/public-api/public-api.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { LandingPageModule } from './modules/landing-page/landing-page.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { BrowserToolsModule } from './modules/browser-tools/browser-tools.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { UploadModule } from './modules/upload/upload.module';
     SchedulerModule,
     LandingPageModule,
     UploadModule,
+    BrowserToolsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

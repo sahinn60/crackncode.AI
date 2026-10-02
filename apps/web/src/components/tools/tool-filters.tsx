@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import { Flame, Star, Crown, Zap, LayoutGrid } from 'lucide-react';
 
 export interface ToolFiltersState {

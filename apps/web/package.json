@@ -10,6 +10,9 @@
     "type-check": "tsc --noEmit",
     "clean": "rimraf .next"
   },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "14.2.35"
+  },
   "dependencies": {
     "@crackncode/types": "*",
     "@crackncode/ui": "*",

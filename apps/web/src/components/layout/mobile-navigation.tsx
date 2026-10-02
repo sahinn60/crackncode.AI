@@ -7,7 +7,7 @@ import {
   X, Code2, LayoutDashboard, Zap, Heart, History,
   Coins, Crown, CreditCard, Bell, MessageCircle, Settings,
 } from 'lucide-react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { label: 'Dashboard',     href: '/dashboard',     icon: <LayoutDashboard className="h-4 w-4" /> },

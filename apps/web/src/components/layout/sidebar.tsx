@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation';
 import {
   ChevronLeft, ChevronRight, LayoutDashboard, Zap, Heart,
   History, Coins, CreditCard, Bell, MessageCircle, Settings,
-  Code2, Crown, LogOut, Shield, Terminal,
+  Code2, Crown, LogOut, Shield, Terminal, Globe,
 } from 'lucide-react';
-import { cn, Tooltip } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import { useUnreadCount } from '@/hooks/use-dashboard';
 
@@ -54,7 +54,8 @@ function useNavGroups() {
     ...(isAdmin ? [{
       label: 'Admin',
       items: [
-        { label: 'Admin Panel', href: '/admin', icon: <Shield className="h-4 w-4" /> },
+        { label: 'Admin Panel',      href: '/admin',                          icon: <Shield className="h-4 w-4" /> },
+        { label: 'Browser Tools',    href: '/admin/tools/browser-sessions',   icon: <Globe className="h-4 w-4" /> },
       ],
     }] : []),
   ];
@@ -143,9 +144,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                 return (
                   <li key={item.href}>
-                    {collapsed ? (
-                      <Tooltip content={item.label} placement="right">{link}</Tooltip>
-                    ) : link}
+                    {link}
                   </li>
                 );
               })}

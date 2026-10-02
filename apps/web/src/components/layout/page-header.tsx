@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import { Breadcrumbs, type BreadcrumbItem } from './breadcrumbs';
 
 export interface PageHeaderProps {

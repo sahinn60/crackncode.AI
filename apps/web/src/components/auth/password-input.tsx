@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 
 interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;

@@ -277,6 +277,45 @@ export const apiClient = {
     logs: (skip = 0, take = 50) => apiFetch<any>(`/admin/logs?skip=${skip}&take=${take}`, {}, true),
   },
 
+  browserTools: {
+    adminList: (p: { skip?: number; take?: number; search?: string; status?: string } = {}) => {
+      const q = new URLSearchParams();
+      if (p.skip !== undefined) q.set('skip', String(p.skip));
+      if (p.take !== undefined) q.set('take', String(p.take));
+      if (p.search) q.set('search', p.search);
+      if (p.status) q.set('status', p.status);
+      return apiFetch<any>(`/admin/browser-tools?${q}`, {}, true);
+    },
+    adminCreate: (body: any) =>
+      apiFetch<any>('/admin/browser-tools', { method: 'POST', body: JSON.stringify(body) }, true),
+    adminUpdate: (id: string, body: any) =>
+      apiFetch<any>(`/admin/browser-tools/${id}`, { method: 'PATCH', body: JSON.stringify(body) }, true),
+    adminDelete: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}`, { method: 'DELETE' }, true),
+    connect: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/connect`, { method: 'POST' }, true),
+    verify: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/verify`, { method: 'POST' }, true),
+    reconnect: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/reconnect`, { method: 'POST' }, true),
+    disconnect: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/disconnect`, { method: 'POST' }, true),
+    connectionStatus: (id: string) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/connection`, {}, true),
+    adminExecutions: (id: string, skip = 0, take = 20) =>
+      apiFetch<any>(`/admin/browser-tools/${id}/executions?skip=${skip}&take=${take}`, {}, true),
+    list: (skip = 0, take = 50) =>
+      apiFetch<any>(`/browser-tools?skip=${skip}&take=${take}`, {}, false),
+    bySlug: (slug: string) =>
+      apiFetch<any>(`/browser-tools/slug/${slug}`, {}, false),
+    execute: (id: string, body: { input: Record<string, unknown>; idempotencyKey?: string }) =>
+      apiFetch<any>(`/browser-tools/${id}/execute`, { method: 'POST', body: JSON.stringify(body) }, true),
+    myExecutions: (skip = 0, take = 20) =>
+      apiFetch<any>(`/browser-tools/executions?skip=${skip}&take=${take}`, {}, true),
+    execution: (id: string) =>
+      apiFetch<any>(`/browser-tools/executions/${id}`, {}, true),
+  },
+
   developer: {
     keys: () => apiFetch<any>('/developer/keys', {}, true),
     create: (body: { name: string; expiresAt?: string }) =>

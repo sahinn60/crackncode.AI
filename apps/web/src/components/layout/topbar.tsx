@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Search, Bell, Sun, Moon, Menu, Coins, ChevronDown, User, Settings, CreditCard, LogOut } from 'lucide-react';
-import { Avatar, Badge, cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import { useTheme } from '@/providers/theme-provider';
 import { useAuth } from '@/providers/auth-provider';
 import { useCredits, useUnreadCount } from '@/hooks/use-dashboard';
@@ -114,7 +114,9 @@ export function Topbar({ onMobileMenuOpen, sidebarCollapsed }: TopbarProps) {
             onClick={() => setProfileOpen((v) => !v)}
             className="flex items-center gap-1.5 rounded-md p-1 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Avatar fallback={displayName} size="sm" status="online" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+              {displayName?.[0]?.toUpperCase() ?? '?'}
+            </div>
             <ChevronDown className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform hidden sm:block', profileOpen && 'rotate-180')} />
           </button>
 

@@ -98,6 +98,41 @@ enum AdminLogAction {
   generation_deleted
   subscription_canceled
   payment_refunded
+  browser_tool_created
+  browser_tool_updated
+  browser_tool_deleted
+  browser_tool_enabled
+  browser_tool_disabled
+  browser_connection_started
+  browser_connection_completed
+  browser_connection_disconnected
+  browser_connection_verified
+  browser_execution_failed
+  browser_session_expired
+}
+
+enum BrowserToolStatus {
+  draft
+  active
+  inactive
+}
+
+enum BrowserConnectionStatus {
+  PENDING
+  CONNECTING
+  CONNECTED
+  EXPIRED
+  ERROR
+  DISCONNECTED
+}
+
+enum BrowserExecutionStatus {
+  queued
+  running
+  completed
+  failed
+  timeout
+  canceled
 }
 
 enum ToolStatus {
@@ -136,6 +171,7 @@ model User {
   apiKeys              ApiKey[]
   sessions             Session[]
   securityEvents       SecurityEvent[]
+  browserExecutions    BrowserToolExecution[]
 
   @@index([email])
   @@index([status])
@@ -232,6 +268,7 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   tools AITool[]
+  browserTools BrowserTool[]
 
   @@index([slug])
   @@index([isActive])
@@ -279,6 +316,87 @@ model AITool {
   @@index([usageCount])
   @@index([tags])
   @@map("ai_tools")
+}
+
+// ─── Browser Session Tools ────────────────────────────────────────────────────
+
+model BrowserTool {
+  id           String            @id @default(cuid())
+  name         String
+  slug         String            @unique
+  description  String
+  websiteUrl   String
+  categoryId   String
+  imageUrl     String?
+  price        Decimal?          @db.Decimal(10, 2)
+  currency     String            @default("USD")
+  ctaText      String            @default("Use Tool")
+  status       BrowserToolStatus @default(draft)
+  featured     Boolean           @default(false)
+  displayOrder Int               @default(0)
+  inputSchema  Json              @default("{}")
+  creditCost   Int               @default(1)
+  deletedAt    DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  category   Category               @relation(fields: [categoryId], references: [id])
+  connection BrowserToolConnection?
+  executions BrowserToolExecution[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([featured])
+  @@index([deletedAt])
+  @@map("browser_tools")
+}
+
+model BrowserToolConnection {
+  id                   String                  @id @default(cuid())
+  browserToolId        String                  @unique
+  status               BrowserConnectionStatus @default(PENDING)
+  encryptedSessionState String?                // AES-256-GCM encrypted — NEVER exposed via API
+  encryptionVersion    Int                     @default(1)
+  lastVerifiedAt       DateTime?
+  lastUsedAt           DateTime?
+  expiresAt            DateTime?
+  lastError            String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  browserTool BrowserTool @relation(fields: [browserToolId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([browserToolId])
+  @@map("browser_tool_connections")
+}
+
+model BrowserToolExecution {
+  id            String                 @id @default(cuid())
+  browserToolId String
+  userId        String
+  status        BrowserExecutionStatus @default(queued)
+  input         Json
+  result        String?
+  errorCode     String?
+  errorMessage  String?
+  creditsUsed   Int                    @default(0)
+  creditTxId    String?
+  idempotencyKey String?               @unique
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  browserTool BrowserTool @relation(fields: [browserToolId], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([browserToolId])
+  @@index([userId])
+  @@index([status])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+  @@map("browser_tool_executions")
 }
 
 model ToolConfiguration {

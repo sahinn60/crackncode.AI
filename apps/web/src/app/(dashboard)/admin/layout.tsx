@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Wrench, CreditCard, BarChart3,
   MessageCircle, FileText, Shield, ChevronLeft, LogOut, Globe,
 } from 'lucide-react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const NAV = [

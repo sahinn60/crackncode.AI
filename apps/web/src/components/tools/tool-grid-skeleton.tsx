@@ -1,4 +1,6 @@
-import { Skeleton } from '@crackncode/ui';
+function Skeleton({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-muted ${className ?? ''}`} />;
+}
 
 export function ToolCardSkeleton() {
   return (

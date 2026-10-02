@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import {
   Bell,
   CreditCard,

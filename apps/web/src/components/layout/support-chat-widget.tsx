@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@crackncode/ui';
+import { cn } from '@/lib/utils';
 import {
   MessageCircle, X, Send, Paperclip, Bot, User, UserCheck,
   Clock, CheckCheck, ChevronDown, AlertCircle, Loader2,

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { AuthProvider } from '@/providers/auth-provider';
-import { ToastProvider } from '@crackncode/ui';
+import { ToastProvider } from '@/providers/toast-provider';
 import './globals.css';
 
 const inter = Inter({
